@@ -1,0 +1,13 @@
+.container {
+  padding: 0 30px;
+}
+
+.post {
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #c4c4c4;
+}
+
+.userName {
+  margin: 0;
+}
