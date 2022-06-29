@@ -7,6 +7,8 @@ declare global {
         title: string;
     }
 
+    type PostUserIdType = Pick<PostType, "userId">;
+
     type PostAddType = Pick<PostType, "userId" | "title">;
 
     type PostDeleteType = Pick<PostType, "id">;

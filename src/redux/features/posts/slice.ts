@@ -10,7 +10,7 @@ const initialState: GenericState<PostType[]> = {
     entities: [],
     loading: "posts/idle",
     error: null,
-    requestId: null,
+    meta: null,
 };
 
 // Action for SSR store use
@@ -49,14 +49,15 @@ const postsSlice = createGenericSlice({
     extraReducers: {
         [add.pending.type]: (state, action) => {
             state.loading = action.type;
-            state.requestId = action.meta.requestId;
+            state.meta = action.meta;
         },
         [add.fulfilled.type]: (state, action) => {
             const { requestId } = action.meta;
+            const { requestId: stateRequestId } = state.meta || {};
 
-            if (state.requestId === requestId) {
+            if (stateRequestId === requestId) {
                 state.loading = action.type;
-                state.requestId = action.meta.requestId;
+                state.meta = action.meta;
                 // id obtained from the response is always the same, so in this case we generate our own
                 const updatedData = { ...action.payload, id: generateId() };
                 state.entities.unshift(updatedData);
@@ -64,32 +65,35 @@ const postsSlice = createGenericSlice({
         },
         [add.rejected.type]: (state, action) => {
             const { requestId } = action.meta;
+            const { requestId: stateRequestId } = state.meta || {};
 
-            if (state.requestId === requestId) {
+            if (stateRequestId === requestId) {
                 state.loading = action.type;
-                state.requestId = action.meta.requestId;
+                state.meta = action.meta;
                 state.error = action.payload;
             }
         },
         [deleteById.pending.type]: (state, action) => {
             state.loading = action.type;
-            state.requestId = action.meta.requestId;
+            state.meta = action.meta;
         },
         [deleteById.fulfilled.type]: (state, action) => {
             const { requestId, arg: { id } } = action.meta;
+            const { requestId: stateRequestId } = state.meta || {};
 
-            if (state.requestId === requestId) {
+            if (stateRequestId === requestId) {
                 state.loading = action.type;
-                state.requestId = action.meta.requestId;
+                state.meta = action.meta;
                 state.entities = state.entities.filter((post: PostType) => post.id !== id);
             }
         },
         [deleteById.rejected.type]: (state, action) => {
             const { requestId } = action.meta;
+            const { requestId: stateRequestId } = state.meta || {};
 
-            if (state.requestId === requestId) {
+            if (stateRequestId === requestId) {
                 state.loading = action.type;
-                state.requestId = action.meta.requestId;
+                state.meta = action.meta;
                 state.error = action.payload;
             }
         },
@@ -104,9 +108,17 @@ export default postsSlice.reducer;
 
 // Selectors
 export const getPosts = () => (state: RootState) => state.posts.entities;
+export const getPostById = ({ id }: PostDeleteType) => (state: RootState) =>
+    state.posts.entities.find(post => post.id === id);
 export const isPendingAddPost = () => (state: RootState) =>
     state.posts.loading === add.pending.type;
 export const isSuccessAddPost = () => (state: RootState) =>
     state.posts.loading === add.fulfilled.type;
-export const isPendingDeletePost = () => (state: RootState) =>
-    state.posts.loading === deleteById.pending.type;
+export const isPendingDeletePost = ({ id }: PostDeleteType) => (state: RootState) => {
+    const { arg } = state.posts.meta || {};
+
+    return (
+        id === arg?.id
+        && state.posts.loading === deleteById.pending.type
+    );
+};

@@ -2,6 +2,7 @@ import { FC, useState, FormEvent, useEffect } from "react";
 
 import { useAppDispatch, useAppSelector } from "~/redux/hooks";
 import { users, posts } from "~/redux/features";
+import Post from "~/components/Post";
 
 import styles from "./Posts.module.css";
 
@@ -15,7 +16,6 @@ const Posts: FC = () => {
     const postsAll = useAppSelector(posts.slice.getPosts());
     const isPendingAddPost = useAppSelector(posts.slice.isPendingAddPost());
     const isSuccessAddPost = useAppSelector(posts.slice.isSuccessAddPost());
-    const isPendingDeletePost = useAppSelector(posts.slice.isPendingDeletePost());
 
     useEffect(() => {
         dispatch(users.slice.get());
@@ -24,10 +24,6 @@ const Posts: FC = () => {
     useEffect(() => {
         setCurrentUser(usersAll[0]);
     }, [isSuccessFetchUsers]);
-
-    useEffect(() => {
-        dispatch(users.slice.get());
-    }, []);
 
     useEffect(() => {
         if (isSuccessAddPost) {
@@ -50,17 +46,11 @@ const Posts: FC = () => {
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
-        if (!title.trim()) {
+        if (!title.trim() || !currentUser) {
             return;
         }
 
-        if (currentUser?.id) {
-            dispatch(posts.slice.add({ userId: currentUser?.id, title }));
-        }
-    }
-
-    function handleDeletePost(data: PostDeleteType) {
-        dispatch(posts.slice.deleteById(data));
+        dispatch(posts.slice.add({ userId: currentUser?.id, title }));
     }
 
     return (
@@ -79,24 +69,14 @@ const Posts: FC = () => {
                 </button>
             </form>
 
-            {postsAll.map(({id, userId, title}) => {
-                const currentUser = usersAll.find(user => user.id === userId);
-
-                return (
-                    <div key={id} className={styles.post}>
-                        <h3 className={styles.userName}>
-                            {currentUser?.name}
-                        </h3>
-                        <p>{id}: {title}</p>
-                        <button
-                            onClick={() => handleDeletePost({ id })}
-                            disabled={isPendingDeletePost}
-                        >
-                            Delete
-                        </button>
-                    </div>
-                );
-            })}
+            {postsAll.map(({ id, userId }) => (
+                <Post
+                    key={id}
+                    id={id}
+                    userId={userId}
+                    className={styles.post}
+                />
+            ))}
         </div>
     );
 };
