@@ -1,11 +1,12 @@
 import { configureStore, Action } from "@reduxjs/toolkit";
-import { ThunkAction } from "redux-thunk";
+import thunkMiddleware, { ThunkAction } from "redux-thunk";
 import { createWrapper } from "next-redux-wrapper";
 
 import rootReducer, { RootState } from "~/redux/rootReducer";
 import { apiMiddleware } from "~/redux/middlewares";
 
 const middlewares = [
+    thunkMiddleware,
     apiMiddleware,
 ];
 

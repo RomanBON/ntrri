@@ -20,15 +20,17 @@ const Post: FC<PostProps> = ({ id, userId, className }) => {
         dispatch(posts.slice.deleteById(data));
     }
 
-    if (!currentPost || !currentUser) {
+    if (!currentPost) {
         return null;
     }
 
     return (
         <div className={`${className} ${styles.post}`}>
-            <h3 className={styles.userName}>
-                {currentUser.name}
-            </h3>
+            {currentUser && (
+                <h3 className={styles.userName}>
+                    {currentUser.name}
+                </h3>
+            )}
 
             <p>{currentPost.id}: {currentPost.title}</p>
 

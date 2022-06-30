@@ -1,5 +1,3 @@
-import { StatusType } from "~/redux/features/generic";
-
 declare global {
     type ErrorType = string | null;
     type MetaType = {
@@ -11,7 +9,7 @@ declare global {
 
     interface GenericState<T> {
         entities: T;
-        loading: StatusType | string;
+        loading: string;
         error: ErrorType;
         meta: MetaType | null;
     }

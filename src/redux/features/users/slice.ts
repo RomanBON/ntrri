@@ -20,7 +20,7 @@ const initialState: GenericState<UserType[]> = {
     entities: [],
     loading: "users/idle",
     error: null,
-    requestId: null,
+    meta: null,
 };
 
 const usersSlice = createGenericSlice({

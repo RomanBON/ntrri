@@ -3,8 +3,9 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "~/redux/rootReducer";
 import { AppThunk, AppDispatch } from "~/redux/store";
 import createGenericSlice from "~/redux/features/generic";
-import { Posts } from "~/api";
-import generateId from "~/utils/generateId";
+import {I18N, Posts} from "~/api";
+import {MiddlewareAPI} from "redux";
+import {Languages} from "~/constants";
 
 const initialState: GenericState<PostType[]> = {
     entities: [],
@@ -13,16 +14,14 @@ const initialState: GenericState<PostType[]> = {
     meta: null,
 };
 
-// Action for SSR store use
-export const get = (): AppThunk => async (dispatch: AppDispatch) => {
-    await Posts.get()
-        .then(({ data }) => {
-            dispatch(actions.success(data));
-        })
-        .catch((error) => {
-            throw dispatch(actions.fail(error.toString()));
-        });
-};
+export const get = createAsyncThunk(
+    "posts/get",
+    async () => {
+        return await Posts.get()
+            .then(({ data }) => data)
+            .catch((error) => error.toString());
+    }
+);
 
 export const add = createAsyncThunk(
     "posts/add",
@@ -47,6 +46,17 @@ const postsSlice = createGenericSlice({
     initialState,
     reducers: {},
     extraReducers: {
+        [get.pending.type]: (state, action) => {
+            state.loading = action.type;
+        },
+        [get.fulfilled.type]: (state, action) => {
+            state.loading = action.type;
+            state.entities = action.payload;
+        },
+        [get.rejected.type]: (state, action) => {
+            state.loading = action.type;
+            state.error = action.payload || null;
+        },
         [add.pending.type]: (state, action) => {
             state.loading = action.type;
             state.meta = action.meta;
@@ -58,9 +68,7 @@ const postsSlice = createGenericSlice({
             if (stateRequestId === requestId) {
                 state.loading = action.type;
                 state.meta = action.meta;
-                // id obtained from the response is always the same, so in this case we generate our own
-                const updatedData = { ...action.payload, id: generateId() };
-                state.entities.unshift(updatedData);
+                state.entities.unshift(action.payload);
             }
         },
         [add.rejected.type]: (state, action) => {
@@ -115,7 +123,7 @@ export const isPendingAddPost = () => (state: RootState) =>
 export const isSuccessAddPost = () => (state: RootState) =>
     state.posts.loading === add.fulfilled.type;
 export const isPendingDeletePost = ({ id }: PostDeleteType) => (state: RootState) => {
-    const { arg } = state.posts.meta || {};
+    const { arg } = state.posts?.meta || {};
 
     return (
         id === arg?.id

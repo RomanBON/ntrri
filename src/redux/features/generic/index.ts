@@ -8,6 +8,7 @@ import {
 } from "@reduxjs/toolkit";
 import { NoInfer } from "@reduxjs/toolkit/dist/tsHelpers";
 import { HYDRATE } from "next-redux-wrapper";
+import { diff } from "jsondiffpatch";
 
 const createGenericSlice = <P, Reducers extends SliceCaseReducers<GenericState<P>>>({
     name = "",
@@ -23,21 +24,29 @@ const createGenericSlice = <P, Reducers extends SliceCaseReducers<GenericState<P
     name,
     initialState,
     reducers: {
-        success(state: GenericState<P>, action: PayloadAction<P>) {
+        fulfilled(state: GenericState<P>, action: PayloadAction<P>) {
             state.loading = action.type;
             state.entities = action.payload;
         },
-        fail(state: GenericState<P>, action: PayloadAction<ErrorType>) {
+        rejected(state: GenericState<P>, action: PayloadAction<ErrorType>) {
             state.loading = action.type;
             state.error = action.payload;
         },
         ...reducers,
     },
     extraReducers: {
-        [HYDRATE]: (state, action) => ({
-            ...state,
-            ...action.payload[name],
-        }),
+        [HYDRATE]: (state, action) => {
+            const stateDiff = diff(state, action.payload[name]);
+            const isStateSuccess = stateDiff?.loading?.[0]?.endsWith("fulfilled");
+            const isPayloadSuccess = stateDiff?.loading?.[1]?.endsWith("fulfilled");
+
+            return {
+                ...state, // use previous state
+                ...action.payload[name], // apply delta from hydration
+                ...(isStateSuccess && state),
+                ...(isPayloadSuccess && action.payload[name]),
+            };
+        },
         ...extraReducers,
     },
 });
